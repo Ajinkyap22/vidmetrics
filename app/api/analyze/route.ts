@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Missing channelUrl. Send JSON: { \"channelUrl\": \"…\" }",
+        error: 'Missing channelUrl. Send JSON: { "channelUrl": "..." }',
         code: "VALIDATION",
       },
       { status: 400 }

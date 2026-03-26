@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VidMetrics — Competitor channel pulse",
+  title: "VidMetrics: competitor channel pulse",
   description:
     "Paste a YouTube channel URL to see which recent uploads are winning on views, likes, and momentum.",
 };

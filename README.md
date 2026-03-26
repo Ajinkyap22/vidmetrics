@@ -1,4 +1,4 @@
-# VidMetrics — Competitor channel pulse
+# VidMetrics: competitor channel pulse
 
 MVP for the VidMetrics hiring challenge: paste a **YouTube channel URL** (or `@handle` path) and inspect **recent uploads** with views, likes, comments, duration, and a **views-per-day** signal. Filtering defaults to **the current calendar month in UTC**; sort and refine on the client.
 
@@ -15,7 +15,7 @@ MVP for the VidMetrics hiring challenge: paste a **YouTube channel URL** (or `@h
 
    ```bash
    cp .env.example .env.local
-   # edit .env.local — set YOUTUBE_API_KEY=...
+   # edit .env.local: set YOUTUBE_API_KEY=...
    ```
 
 3. Install and run:
@@ -36,10 +36,10 @@ Detailed checklist: see [human_assistance_steps.md](./human_assistance_steps.md)
 
 ## Architecture
 
-- **`app/api/analyze/route.ts`** — Validates JSON body, reads `YOUTUBE_API_KEY`, calls `analyzeChannel`.
-- **`lib/youtube.ts`** — Parses channel input (`UC…`, `@handle`, `/c/`, `/user/` + `search.list` fallback), loads up to **200** `playlistItems` from the uploads playlist, batches **`videos.list`** (50 IDs per call), normalizes metrics.
-- **`components/VidDashboard.tsx`** — Client UI: filters (UTC date range, title, min views), sort (views / date / likes), **desktop table** + **mobile cards**, CSV export, “Top tier” badge for **top quartile of views/day** in the **current filtered** set.
-- **`components/ViewsBarChart.tsx`** — Horizontal bar chart of top views in the filtered list.
+- **`app/api/analyze/route.ts`:** validates JSON body, reads `YOUTUBE_API_KEY`, calls `analyzeChannel`.
+- **`lib/youtube.ts`:** parses channel input (`UC...`, `@handle`, `/c/`, `/user/` + `search.list` fallback), loads up to **200** `playlistItems` from the uploads playlist, batches **`videos.list`** (50 IDs per call), normalizes metrics. When the handle does not resolve exactly, search may substitute a channel; the API returns `resolutionNote` and the UI shows a YouTube-style disclaimer.
+- **`components/VidDashboard.tsx`:** client UI: filters (UTC date range, title, min views), sort (views / date / likes), **desktop table** + **mobile cards**, CSV export, "Top tier" badge for **top quartile of views/day** in the **current filtered** set.
+- **`components/ViewsBarChart.tsx`:** horizontal bar chart of top views in the filtered list.
 
 ```mermaid
 flowchart LR
@@ -54,7 +54,7 @@ flowchart LR
 
 - **No auth / rate limiting** on the demo API route (acceptable for an MVP; add Edge middleware + KV or a BFF quota in production).
 - **Uploads list capped at 200** items per analysis to stay within sensible quota; UI notes when the list is truncated.
-- **Search fallback** for `/c/` and `/user/` may pick the wrong channel if the name is ambiguous—prefer `@handle` or `/channel/UC…` for demos.
+- **Search fallback** for `/c/` and `/user/` may pick the wrong channel if the name is ambiguous. Prefer `@handle` or `/channel/UC...` for demos. When search is used for a handle that did not match `forHandle`, the UI explains the substitution.
 
 ## AI-assisted workflow (for reviewers)
 
@@ -72,9 +72,9 @@ flowchart LR
 
 ## Challenge submission helpers
 
-- [docs/SUBMISSION_CHECKLIST.md](./docs/SUBMISSION_CHECKLIST.md) — links and permissions to verify before sending.
-- [docs/LOOM_OUTLINE.md](./docs/LOOM_OUTLINE.md) — ~5 minute talking points (camera on).
-- [docs/WRITTEN_SUBMISSION_TEMPLATE.md](./docs/WRITTEN_SUBMISSION_TEMPLATE.md) — paste into Notion or export as PDF.
+- [docs/SUBMISSION_CHECKLIST.md](./docs/SUBMISSION_CHECKLIST.md): links and permissions to verify before sending.
+- [docs/LOOM_OUTLINE.md](./docs/LOOM_OUTLINE.md): ~5 minute talking points (camera on).
+- [docs/WRITTEN_SUBMISSION_TEMPLATE.md](./docs/WRITTEN_SUBMISSION_TEMPLATE.md): paste into Notion or export as PDF.
 
 ## License
 

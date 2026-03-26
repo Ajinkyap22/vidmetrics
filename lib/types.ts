@@ -27,11 +27,19 @@ export type AnalyzeMeta = {
   uploadsPlaylistTruncated: boolean;
 };
 
+/** Present when we could not resolve the URL/handle exactly and used search instead. */
+export type ChannelResolutionNote = {
+  attempted: string;
+  resolvedTitle: string;
+};
+
 export type AnalyzeSuccessResponse = {
   ok: true;
   channel: ChannelSummary;
   meta: AnalyzeMeta;
   videos: VideoItem[];
+  /** YouTube-style disclaimer when search substituted a different channel. */
+  resolutionNote?: ChannelResolutionNote;
 };
 
 export type AnalyzeErrorResponse = {

@@ -19,7 +19,7 @@ export function ViewsBarChart({ rows, maxTitles }: { rows: Row[]; maxTitles: num
     .map((r) => ({
       id: r.id,
       name:
-        r.title.length > 28 ? `${r.title.slice(0, 26)}…` : r.title,
+        r.title.length > 28 ? `${r.title.slice(0, 26)}...` : r.title,
       views: r.viewCount,
     }));
 

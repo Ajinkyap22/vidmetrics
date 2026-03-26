@@ -146,7 +146,7 @@ function isoDurationSeconds(iso: string): number {
 
 export function formatIsoDuration(iso: string): string {
   const sec = isoDurationSeconds(iso);
-  if (sec <= 0) return "—";
+  if (sec <= 0) return "n/a";
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
@@ -202,9 +202,16 @@ type SearchListResponse = {
   }>;
 };
 
-type ResolveOutcome =
-  | { ok: true; channel: ResolvedChannel }
-  | { ok: false; error: string; code: "NOT_FOUND" | "YOUTUBE" };
+type ResolveOk = {
+  ok: true;
+  channel: ResolvedChannel;
+  /** False when `forHandle` missed and we used search, or when resolving /c/ or /user/ via search only. */
+  exactMatch: boolean;
+  /** Label for UI when `exactMatch` is false (shown inside quotes). */
+  attemptedLabel?: string;
+};
+
+type ResolveOutcome = ResolveOk | { ok: false; error: string; code: "NOT_FOUND" | "YOUTUBE" };
 
 async function resolveChannel(
   key: string,
@@ -236,14 +243,18 @@ async function resolveChannel(
       return {
         ok: false,
         error:
-          "No channel with that ID. Copy the full /channel/… ID from YouTube, or use an @handle link.",
+          "No channel with that ID. Copy the full /channel/... ID from YouTube, or use an @handle link.",
         code: "NOT_FOUND",
       };
     }
-    return { ok: true, channel: ch };
+    return { ok: true, channel: ch, exactMatch: true };
   };
 
-  const searchChannel = async (q: string): Promise<ResolveOutcome> => {
+  /** Search always treats the result as a non-exact match for messaging. */
+  const searchChannel = async (
+    q: string,
+    attemptedLabel: string
+  ): Promise<ResolveOutcome> => {
     const sr = await ytRequest<SearchListResponse>(key, "search", {
       part: "snippet",
       type: "channel",
@@ -260,11 +271,18 @@ async function resolveChannel(
       return {
         ok: false,
         error:
-          "Channel not found. Try the channel’s @handle from its YouTube profile URL, or a /channel/UC… link.",
+          "Channel not found. Try the channel @handle from its YouTube profile URL, or a /channel/UC... link.",
         code: "NOT_FOUND",
       };
     }
-    return loadById(chId);
+    const byId = await loadById(chId);
+    if (!byId.ok) return byId;
+    return {
+      ok: true,
+      channel: byId.channel,
+      exactMatch: false,
+      attemptedLabel,
+    };
   };
 
   if (ref.kind === "channelId") {
@@ -280,11 +298,11 @@ async function resolveChannel(
       return { ok: false, error: res.message, code: "YOUTUBE" };
     }
     const ch = mapItem(res.data.items?.[0]);
-    if (ch) return { ok: true, channel: ch };
-    return searchChannel(ref.handle);
+    if (ch) return { ok: true, channel: ch, exactMatch: true };
+    return searchChannel(ref.handle, `@${ref.handle}`);
   }
 
-  return searchChannel(ref.query);
+  return searchChannel(ref.query, ref.query);
 }
 
 async function listUploadVideoIds(
@@ -399,7 +417,7 @@ export async function analyzeChannel(
     return {
       ok: false,
       error:
-        "Could not parse that input. Paste a YouTube channel link (@handle, /channel/UC…, /c/…, or /user/…).",
+        "Could not parse that input. Paste a YouTube channel link (@handle, /channel/UC..., /c/..., or /user/...).",
       code: "PARSE",
     };
   }
@@ -414,6 +432,14 @@ export async function analyzeChannel(
   }
 
   const channelData = resolved.channel;
+  const resolutionNote =
+    resolved.exactMatch === false && resolved.attemptedLabel
+      ? {
+          attempted: resolved.attemptedLabel,
+          resolvedTitle: channelData.snippet.title || "Channel",
+        }
+      : undefined;
+
   const uploads = channelData.contentDetails.relatedPlaylists?.uploads;
   if (!uploads) {
     return {
@@ -448,5 +474,6 @@ export async function analyzeChannel(
       uploadsPlaylistTruncated: truncated,
     },
     videos,
+    ...(resolutionNote ? { resolutionNote } : {}),
   };
 }

@@ -37,6 +37,19 @@ function formatUtcDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", UTC_DATE_DISPLAY);
 }
 
+/** Vanity URL slug as @handle for resolution messaging (API returns customUrl without @). */
+function channelAtHandle(
+  channel: AnalyzeSuccessResponse["channel"],
+  titleFallback: string,
+): string {
+  const raw = channel.customUrl?.trim();
+  if (raw) {
+    const slug = raw.replace(/^@/, "").replace(/^\//, "");
+    return slug ? `@${slug}` : titleFallback;
+  }
+  return titleFallback;
+}
+
 export function VidDashboard() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -71,7 +84,9 @@ export function VidDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ channelUrl: input }),
       });
-      const json = (await res.json()) as AnalyzeSuccessResponse | { ok: false; error: string };
+      const json = (await res.json()) as
+        | AnalyzeSuccessResponse
+        | { ok: false; error: string };
       if (!json.ok) {
         setError("error" in json ? json.error : "Request failed");
         return;
@@ -109,7 +124,8 @@ export function VidDashboard() {
       if (sortKey === "publishedAt") {
         return (
           dir *
-          (new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime())
+          (new Date(a.publishedAt).getTime() -
+            new Date(b.publishedAt).getTime())
         );
       }
       return dir * (a[sortKey] - b[sortKey]);
@@ -118,7 +134,7 @@ export function VidDashboard() {
 
   const vpdThreshold = useMemo(
     () => quartileThreshold(sorted.map((v) => v.viewsPerDay)),
-    [sorted]
+    [sorted],
   );
 
   const toggleSort = (k: SortKey) => {
@@ -153,10 +169,12 @@ export function VidDashboard() {
           v.likeCount,
           v.commentCount,
           v.viewsPerDay.toFixed(2),
-        ].join(",")
+        ].join(","),
       ),
     ];
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "vidmetrics-export.csv";
@@ -195,7 +213,7 @@ export function VidDashboard() {
             <strong className="font-medium text-zinc-800 dark:text-zinc-200">
               this month (UTC)
             </strong>
-            —adjust the range anytime.
+            . Adjust the range anytime.
           </p>
         </div>
         <ThemeToggle />
@@ -214,7 +232,8 @@ export function VidDashboard() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && input.trim() && !loading) void runAnalyze();
+              if (e.key === "Enter" && input.trim() && !loading)
+                void runAnalyze();
             }}
             className="min-h-11 flex-1 rounded-xl border border-zinc-300 bg-zinc-50/80 px-4 text-zinc-900 shadow-inner outline-none ring-zinc-400 transition-[box-shadow,border-color] placeholder:text-zinc-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/30 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500"
           />
@@ -224,13 +243,14 @@ export function VidDashboard() {
             onClick={runAnalyze}
             className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-red-600 px-6 text-sm font-semibold text-white shadow-sm transition-[transform,background] hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-600"
           >
-            {loading ? "Analyzing…" : "Analyze channel"}
+            {loading ? "Analyzing..." : "Analyze channel"}
           </button>
         </div>
+
         {error && (
           <div
             role="alert"
-            className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-100"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-100"
           >
             <span>{error}</span>
             <button
@@ -246,6 +266,18 @@ export function VidDashboard() {
 
       {data && (
         <>
+          {data?.resolutionNote ? (
+            <div
+              role="status"
+              className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100"
+            >
+              Could not find an exact channel match for &quot;
+              {data.resolutionNote.attempted}&quot;. Showing results for &quot;
+              {channelAtHandle(data.channel, data.resolutionNote.resolvedTitle)}
+              &quot; instead.
+            </div>
+          ) : null}
+
           <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/40 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="flex items-center gap-4">
               {data.channel.thumbnailUrl ? (
@@ -268,7 +300,9 @@ export function VidDashboard() {
                     : `Channel ID ${data.channel.id}`}
                   {" · "}
                   Scanned {data.meta.playlistItemsScanned} recent uploads
-                  {data.meta.uploadsPlaylistTruncated ? " (list capped at 200)" : ""}
+                  {data.meta.uploadsPlaylistTruncated
+                    ? " (list capped at 200)"
+                    : ""}
                 </p>
               </div>
             </div>
@@ -285,7 +319,10 @@ export function VidDashboard() {
           <section className="grid gap-4 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/40 sm:p-6 lg:grid-cols-2 lg:items-end">
             <div className="flex flex-wrap gap-3">
               <div className="flex min-w-[8rem] flex-col gap-1">
-                <label htmlFor="f-start" className="text-xs font-medium text-zinc-500">
+                <label
+                  htmlFor="f-start"
+                  className="text-xs font-medium text-zinc-500"
+                >
                   From (UTC)
                 </label>
                 <input
@@ -297,7 +334,10 @@ export function VidDashboard() {
                 />
               </div>
               <div className="flex min-w-[8rem] flex-col gap-1">
-                <label htmlFor="f-end" className="text-xs font-medium text-zinc-500">
+                <label
+                  htmlFor="f-end"
+                  className="text-xs font-medium text-zinc-500"
+                >
                   To (UTC)
                 </label>
                 <input
@@ -309,7 +349,10 @@ export function VidDashboard() {
                 />
               </div>
               <div className="flex min-w-[10rem] flex-1 flex-col gap-1">
-                <label htmlFor="f-title" className="text-xs font-medium text-zinc-500">
+                <label
+                  htmlFor="f-title"
+                  className="text-xs font-medium text-zinc-500"
+                >
                   Title contains
                 </label>
                 <input
@@ -317,12 +360,15 @@ export function VidDashboard() {
                   type="search"
                   value={titleQ}
                   onChange={(e) => setTitleQ(e.target.value)}
-                  placeholder="Filter…"
+                  placeholder="Filter..."
                   className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-600 dark:bg-zinc-950"
                 />
               </div>
               <div className="flex w-28 flex-col gap-1">
-                <label htmlFor="f-minv" className="text-xs font-medium text-zinc-500">
+                <label
+                  htmlFor="f-minv"
+                  className="text-xs font-medium text-zinc-500"
+                >
                   Min views
                 </label>
                 <input
@@ -346,7 +392,8 @@ export function VidDashboard() {
 
           {sorted.length === 0 ? (
             <p className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-600 dark:border-zinc-600 dark:bg-zinc-900/30 dark:text-zinc-400">
-              No videos in this range. Widen the UTC date range or clear filters.
+              No videos in this range. Widen the UTC date range or clear
+              filters.
             </p>
           ) : (
             <>
@@ -474,9 +521,7 @@ function VideoCard({ v, hot }: { v: VideoItem; hot: boolean }) {
       </a>
       <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
         <dt className="font-medium text-zinc-500">Published (UTC)</dt>
-        <dd>
-          {formatUtcDate(v.publishedAt)}
-        </dd>
+        <dd>{formatUtcDate(v.publishedAt)}</dd>
         <dt className="font-medium text-zinc-500">Duration</dt>
         <dd className="font-mono">{v.durationFormatted}</dd>
         <dt className="font-medium text-zinc-500">Views</dt>

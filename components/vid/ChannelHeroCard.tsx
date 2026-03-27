@@ -49,7 +49,6 @@ export function ChannelHeroCard({
             className="rounded-full border-2 border-[#FF0033] object-cover"
             style={{ boxShadow: "0 0 18px rgba(255,0,51,0.35)" }}
             onError={onChannelThumbError}
-            unoptimized
           />
         ) : (
           <div className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-zinc-300 bg-zinc-100 text-zinc-500 dark:border-white/10 dark:bg-[#272727] dark:text-[#aaaaaa]">

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { analyzeChannel } from "@/lib/youtube";
-import type { AnalyzeRequestBody } from "@/lib/types";
+import { validateAnalyzeBody } from "@/lib/validation";
 
 export async function POST(req: Request) {
-  let body: AnalyzeRequestBody;
+  let body: unknown;
 
   try {
-    body = (await req.json()) as AnalyzeRequestBody;
+    body = await req.json();
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid JSON body.", code: "BAD_REQUEST" },
@@ -14,17 +14,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const url = typeof body.channelUrl === "string" ? body.channelUrl.trim() : "";
-
-  if (!url) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: 'Missing channelUrl. Send JSON: { "channelUrl": "..." }',
-        code: "VALIDATION",
-      },
-      { status: 400 },
-    );
+  const validated = validateAnalyzeBody(body);
+  if (!validated.ok) {
+    return NextResponse.json(validated, { status: 400 });
   }
 
   const key = process.env.YOUTUBE_API_KEY;
@@ -42,7 +34,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await analyzeChannel(key, url);
+    const result = await analyzeChannel(key, validated.channelUrl);
 
     if (!result.ok) {
       const st =

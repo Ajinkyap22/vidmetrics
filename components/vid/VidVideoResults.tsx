@@ -24,6 +24,12 @@ export function VidVideoResults({
   sortState,
   onToggleSort,
 }: Props) {
+  const mobileSortOptions: Array<{ key: VidSortKey; label: string }> = [
+    { key: "viewCount", label: "Views" },
+    { key: "publishedAt", label: "Published" },
+    { key: "likeCount", label: "Likes" },
+  ];
+
   const sortIndicator = (k: VidSortKey) => {
     if (!sortState || sortState.key !== k) return "↕";
     return sortState.dir === "desc" ? "↓" : "↑";
@@ -106,6 +112,40 @@ export function VidVideoResults({
             </div>
           </div>
           <div className="flex flex-col gap-3 md:hidden">
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-white/10 dark:bg-[#1a1a1a]">
+              <span className="mr-1 text-[10px] font-bold tracking-widest text-zinc-400 uppercase dark:text-[#717171]">
+                Sort
+              </span>
+
+              {mobileSortOptions.map((opt) => {
+                const isActive = sortState?.key === opt.key;
+                const dir =
+                  isActive && sortState?.dir === "desc" ? "Desc" : "Asc";
+
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => onToggleSort(opt.key)}
+                    className={clsx(
+                      "inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                      isActive
+                        ? "border-[#FF0033]/35 bg-[#FF0033]/10 text-[#b00025] dark:text-[#ff8ca3]"
+                        : "border-zinc-300 bg-white text-zinc-700 dark:border-white/15 dark:bg-[#0f0f0f] dark:text-[#aaaaaa]",
+                    )}
+                    aria-label={`Sort mobile results by ${opt.label}`}
+                  >
+                    {opt.label}
+                    <span className="text-[10px]">
+                      {sortIndicator(opt.key)}
+                    </span>
+                    {isActive ? (
+                      <span className="text-[10px] opacity-80">({dir})</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
             {sorted.map((v) => (
               <VideoCard key={v.id} v={v} hot={v.viewsPerDay >= vpdThreshold} />
             ))}

@@ -8,6 +8,7 @@ const YT = "https://www.googleapis.com/youtube/v3";
 const PLAYLIST_PAGE = 50;
 const MAX_PLAYLIST_ITEMS = 200;
 const VIDEO_BATCH = 50;
+const YT_TIMEOUT_MS = 12_000;
 
 type ParsedChannelRef =
   | { kind: "channelId"; channelId: string }
@@ -98,7 +99,11 @@ async function ytGet(
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined) u.searchParams.set(k, String(v));
   }
-  return fetch(u.toString(), { next: { revalidate: 0 } });
+  return fetch(u.toString(), {
+    next: { revalidate: 0 },
+    cache: "no-store",
+    signal: AbortSignal.timeout(YT_TIMEOUT_MS),
+  });
 }
 
 type YtResult<T> =
@@ -110,7 +115,20 @@ async function ytRequest<T>(
   path: string,
   params: Record<string, string | number | undefined>,
 ): Promise<YtResult<T>> {
-  const r = await ytGet(key, path, params);
+  let r: Response;
+  try {
+    r = await ytGet(key, path, params);
+  } catch (error) {
+    const isTimeout =
+      error instanceof DOMException && error.name === "TimeoutError";
+    return {
+      ok: false,
+      status: isTimeout ? 504 : 502,
+      message: isTimeout
+        ? "YouTube API request timed out."
+        : "YouTube API request failed before receiving a response.",
+    };
+  }
   let data: unknown;
   try {
     data = await r.json();
@@ -331,7 +349,10 @@ async function resolveChannel(
 async function listUploadVideoIds(
   key: string,
   uploadsPlaylistId: string,
-): Promise<{ ids: string[]; truncated: boolean }> {
+): Promise<
+  | { ok: true; ids: string[]; truncated: boolean }
+  | { ok: false; error: string; code: "YOUTUBE" }
+> {
   const ids: string[] = [];
   let pageToken: string | undefined;
   let truncated = false;
@@ -339,19 +360,25 @@ async function listUploadVideoIds(
   while (ids.length < MAX_PLAYLIST_ITEMS) {
     const remain = MAX_PLAYLIST_ITEMS - ids.length;
     const take = Math.min(PLAYLIST_PAGE, remain);
-    const r = await ytGet(key, "playlistItems", {
+    const r = await ytRequest<{
+      items?: {
+        snippet?: { resourceId?: { videoId?: string } };
+      }[];
+      nextPageToken?: string;
+    }>(key, "playlistItems", {
       part: "snippet,contentDetails",
       playlistId: uploadsPlaylistId,
       maxResults: take,
       pageToken,
     });
-    if (!r.ok) break;
-    const j = (await r.json()) as {
-      items?: {
-        snippet?: { resourceId?: { videoId?: string } };
-      }[];
-      nextPageToken?: string;
-    };
+    if (!r.ok) {
+      return {
+        ok: false,
+        error: r.message,
+        code: "YOUTUBE",
+      };
+    }
+    const j = r.data;
     const items = j.items || [];
     for (const it of items) {
       const vid = it.snippet?.resourceId?.videoId;
@@ -369,22 +396,20 @@ async function listUploadVideoIds(
     pageToken = j.nextPageToken;
   }
 
-  return { ids, truncated };
+  return { ok: true, ids, truncated };
 }
 
 async function fetchVideosBatched(
   key: string,
   videoIds: string[],
-): Promise<VideoItem[]> {
+): Promise<
+  | { ok: true; videos: VideoItem[] }
+  | { ok: false; error: string; code: "YOUTUBE" }
+> {
   const out: VideoItem[] = [];
   for (let i = 0; i < videoIds.length; i += VIDEO_BATCH) {
     const slice = videoIds.slice(i, i + VIDEO_BATCH);
-    const r = await ytGet(key, "videos", {
-      part: "snippet,statistics,contentDetails",
-      id: slice.join(","),
-    });
-    if (!r.ok) continue;
-    const j = (await r.json()) as {
+    const r = await ytRequest<{
       items?: {
         id: string;
         snippet?: {
@@ -403,7 +428,18 @@ async function fetchVideosBatched(
           commentCount?: string;
         };
       }[];
-    };
+    }>(key, "videos", {
+      part: "snippet,statistics,contentDetails",
+      id: slice.join(","),
+    });
+    if (!r.ok) {
+      return {
+        ok: false,
+        error: r.message,
+        code: "YOUTUBE",
+      };
+    }
+    const j = r.data;
     for (const v of j.items || []) {
       const sn = v.snippet;
       const st = v.statistics;
@@ -429,7 +465,7 @@ async function fetchVideosBatched(
       });
     }
   }
-  return out;
+  return { ok: true, videos: out };
 }
 
 export async function analyzeChannel(
@@ -474,7 +510,16 @@ export async function analyzeChannel(
     };
   }
 
-  const { ids, truncated } = await listUploadVideoIds(apiKey, uploads);
+  const uploadIds = await listUploadVideoIds(apiKey, uploads);
+  if (!uploadIds.ok) {
+    return {
+      ok: false,
+      error: uploadIds.error,
+      code: uploadIds.code,
+    };
+  }
+
+  const { ids, truncated } = uploadIds;
   if (ids.length === 0) {
     return {
       ok: false,
@@ -483,7 +528,15 @@ export async function analyzeChannel(
     };
   }
 
-  const videos = await fetchVideosBatched(apiKey, ids);
+  const videosResult = await fetchVideosBatched(apiKey, ids);
+  if (!videosResult.ok) {
+    return {
+      ok: false,
+      error: videosResult.error,
+      code: videosResult.code,
+    };
+  }
+  const videos = videosResult.videos;
   const snippet = channelData.snippet;
   const stats = channelData.statistics;
   let subscriberCount: number | undefined;

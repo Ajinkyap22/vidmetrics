@@ -22,7 +22,6 @@ export function VideoTableRow({ v, hot }: { v: VideoItem; hot: boolean }) {
               width={88}
               height={48}
               className="h-12 w-22 object-cover transition-transform duration-300 group-hover:scale-105"
-              unoptimized
             />
           </div>
           <span className="line-clamp-2 font-medium text-zinc-900 transition-colors duration-150 group-hover:text-[#FF0033] dark:text-[#f1f1f1]">
@@ -69,7 +68,6 @@ export function VideoCard({ v, hot }: { v: VideoItem; hot: boolean }) {
             width={128}
             height={72}
             className="h-18 w-32 object-cover"
-            unoptimized
           />
         </div>
         <div className="min-w-0 flex-1">

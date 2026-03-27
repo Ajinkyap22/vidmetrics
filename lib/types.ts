@@ -7,6 +7,10 @@ export type ChannelSummary = {
   title: string;
   customUrl?: string;
   thumbnailUrl?: string;
+  /** Present when YouTube returns a public subscriber count. */
+  subscriberCount?: number;
+  /** True when the channel hides subscriber count on YouTube. */
+  subscribersHidden?: boolean;
 };
 
 export type VideoItem = {

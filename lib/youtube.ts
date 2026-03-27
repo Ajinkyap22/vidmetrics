@@ -195,6 +195,10 @@ type ResolvedChannel = {
   contentDetails: {
     relatedPlaylists?: { uploads?: string };
   };
+  statistics?: {
+    subscriberCount?: string;
+    hiddenSubscriberCount?: boolean;
+  };
 };
 
 type ChannelListResponse = {
@@ -202,6 +206,7 @@ type ChannelListResponse = {
     id: string;
     snippet?: ResolvedChannel["snippet"];
     contentDetails?: ResolvedChannel["contentDetails"];
+    statistics?: ResolvedChannel["statistics"];
   }>;
 };
 
@@ -231,18 +236,20 @@ async function resolveChannel(
     id: string;
     snippet?: ResolvedChannel["snippet"];
     contentDetails?: ResolvedChannel["contentDetails"];
+    statistics?: ResolvedChannel["statistics"];
   } | undefined): ResolvedChannel | null => {
     if (!it?.snippet || !it.contentDetails) return null;
     return {
       id: it.id,
       snippet: it.snippet,
       contentDetails: it.contentDetails,
+      statistics: it.statistics,
     };
   };
 
   const loadById = async (channelId: string): Promise<ResolveOutcome> => {
     const res = await ytRequest<ChannelListResponse>(key, "channels", {
-      part: "snippet,contentDetails",
+      part: "snippet,contentDetails,statistics",
       id: channelId,
     });
     if (!res.ok) {
@@ -301,7 +308,7 @@ async function resolveChannel(
 
   if (ref.kind === "handle") {
     const res = await ytRequest<ChannelListResponse>(key, "channels", {
-      part: "snippet,contentDetails",
+      part: "snippet,contentDetails,statistics",
       forHandle: ref.handle,
     });
     if (!res.ok) {
@@ -471,6 +478,15 @@ export async function analyzeChannel(
 
   const videos = await fetchVideosBatched(apiKey, ids);
   const snippet = channelData.snippet;
+  const stats = channelData.statistics;
+  let subscriberCount: number | undefined;
+  let subscribersHidden: boolean | undefined;
+  if (stats?.hiddenSubscriberCount === true) {
+    subscribersHidden = true;
+  } else if (stats?.subscriberCount != null && stats.subscriberCount !== "") {
+    const n = parseInt(stats.subscriberCount, 10);
+    if (Number.isFinite(n)) subscriberCount = n;
+  }
 
   return {
     ok: true,
@@ -479,6 +495,8 @@ export async function analyzeChannel(
       title: snippet.title || "Channel",
       customUrl: snippet.customUrl,
       thumbnailUrl: thumbUrl(snippet),
+      ...(subscriberCount != null ? { subscriberCount } : {}),
+      ...(subscribersHidden ? { subscribersHidden: true } : {}),
     },
     meta: {
       playlistItemsScanned: ids.length,

@@ -1,6 +1,6 @@
 # VidMetrics: competitor channel pulse
 
-MVP for the VidMetrics hiring challenge: paste a **YouTube channel URL** (or `@handle` path) and inspect **recent uploads** with views, likes, comments, duration, and a **views-per-day** signal. Filtering defaults to **the current calendar month in UTC**; sort and refine on the client.
+MVP for **VidMetrics**: paste a **YouTube channel URL** (or `@handle` path) and inspect **recent uploads** with views, likes, comments, duration, and a **views-per-day** signal. Filtering defaults to **the current calendar month in UTC**; sort and refine on the client.
 
 ## Stack
 
@@ -56,26 +56,16 @@ flowchart LR
 - **Uploads list capped at 200** items per analysis to stay within sensible quota; UI notes when the list is truncated.
 - **Search fallback** for `/c/` and `/user/` may pick the wrong channel if the name is ambiguous. Prefer `@handle` or `/channel/UC...` for demos. When search is used for a handle that did not match `forHandle`, the UI explains the substitution.
 
-## AI-assisted workflow (for reviewers)
+## Development approach
 
-- Scaffolded with `create-next-app`, then iterated with AI on data plumbing (`lib/youtube.ts`), UI/UX polish, and docs.
-- AI was used for API shape design, TypeScript types, and responsive layout; you manually verified behavior against real channels and **your own API key**.
+- Scaffolded with `create-next-app`, then iterated with AI assistance on data plumbing (`lib/youtube.ts`), UI/UX polish, and docs.
+- AI helped with API shape design, TypeScript types, and responsive layout; behavior was validated manually against real channels and **own API key**.
 
 ## Scripts
 
-| Command        | Purpose              |
-| -------------- | -------------------- |
-| `npm run dev`  | Development server   |
-| `npm run build`| Production build     |
-| `npm run start`| Serve production build |
-| `npm run lint` | ESLint               |
-
-## Challenge submission helpers
-
-- [docs/SUBMISSION_CHECKLIST.md](./docs/SUBMISSION_CHECKLIST.md): links and permissions to verify before sending.
-- [docs/LOOM_OUTLINE.md](./docs/LOOM_OUTLINE.md): ~5 minute talking points (camera on).
-- [docs/WRITTEN_SUBMISSION_TEMPLATE.md](./docs/WRITTEN_SUBMISSION_TEMPLATE.md): paste into Notion or export as PDF.
-
-## License
-
-Private / assessment use per employer instructions.
+| Command         | Purpose                |
+| --------------- | ---------------------- |
+| `npm run dev`   | Development server     |
+| `npm run build` | Production build       |
+| `npm run start` | Serve production build |
+| `npm run lint`  | ESLint                 |

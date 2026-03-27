@@ -1,11 +1,13 @@
 "use client";
 
 import clsx from "clsx";
+
 import type { VideoItem } from "@/lib/types";
 import type { VidSortKey } from "@/lib/vidMetricsUtils";
-import { ViewsBarChart } from "../ViewsBarChart";
-import { VideoCard, VideoTableRow } from "./videoRows";
-import { CARD, CARD_SHADOW } from "./dashboardStyles";
+
+import { ViewsBarChart } from "@/components/ViewsBarChart";
+import { VideoCard, VideoTableRow } from "@/components/vid/VideoRows";
+import { CARD, CARD_SHADOW } from "@/components/vid/dashboardStyles";
 
 type SortState = { key: VidSortKey; dir: "asc" | "desc" } | null;
 
@@ -32,7 +34,7 @@ export function VidVideoResults({
       type="button"
       onClick={() => onToggleSort(k)}
       className={clsx(
-        "inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold uppercase tracking-widest transition-colors",
+        "inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold tracking-widest uppercase transition-colors",
         alignRight && "ml-auto",
         sortState?.key === k
           ? "text-zinc-700 dark:text-[#f1f1f1]"
@@ -58,7 +60,11 @@ export function VidVideoResults({
       ) : (
         <>
           <div
-            className={clsx("hidden overflow-hidden md:block", CARD, CARD_SHADOW)}
+            className={clsx(
+              "hidden overflow-hidden md:block",
+              CARD,
+              CARD_SHADOW,
+            )}
           >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
@@ -101,11 +107,7 @@ export function VidVideoResults({
           </div>
           <div className="flex flex-col gap-3 md:hidden">
             {sorted.map((v) => (
-              <VideoCard
-                key={v.id}
-                v={v}
-                hot={v.viewsPerDay >= vpdThreshold}
-              />
+              <VideoCard key={v.id} v={v} hot={v.viewsPerDay >= vpdThreshold} />
             ))}
           </div>
         </>

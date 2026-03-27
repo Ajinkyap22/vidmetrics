@@ -91,7 +91,7 @@ export function parseChannelInput(input: string): ParsedChannelRef | null {
 async function ytGet(
   key: string,
   path: string,
-  params: Record<string, string | number | undefined>
+  params: Record<string, string | number | undefined>,
 ): Promise<Response> {
   const u = new URL(`${YT}/${path}`);
   u.searchParams.set("key", key);
@@ -108,7 +108,7 @@ type YtResult<T> =
 async function ytRequest<T>(
   key: string,
   path: string,
-  params: Record<string, string | number | undefined>
+  params: Record<string, string | number | undefined>,
 ): Promise<YtResult<T>> {
   const r = await ytGet(key, path, params);
   let data: unknown;
@@ -226,18 +226,24 @@ type ResolveOk = {
   attemptedLabel?: string;
 };
 
-type ResolveOutcome = ResolveOk | { ok: false; error: string; code: "NOT_FOUND" | "YOUTUBE" };
+type ResolveOutcome =
+  | ResolveOk
+  | { ok: false; error: string; code: "NOT_FOUND" | "YOUTUBE" };
 
 async function resolveChannel(
   key: string,
-  ref: ParsedChannelRef
+  ref: ParsedChannelRef,
 ): Promise<ResolveOutcome> {
-  const mapItem = (it: {
-    id: string;
-    snippet?: ResolvedChannel["snippet"];
-    contentDetails?: ResolvedChannel["contentDetails"];
-    statistics?: ResolvedChannel["statistics"];
-  } | undefined): ResolvedChannel | null => {
+  const mapItem = (
+    it:
+      | {
+          id: string;
+          snippet?: ResolvedChannel["snippet"];
+          contentDetails?: ResolvedChannel["contentDetails"];
+          statistics?: ResolvedChannel["statistics"];
+        }
+      | undefined,
+  ): ResolvedChannel | null => {
     if (!it?.snippet || !it.contentDetails) return null;
     return {
       id: it.id,
@@ -270,7 +276,7 @@ async function resolveChannel(
   /** Search always treats the result as a non-exact match for messaging. */
   const searchChannel = async (
     q: string,
-    attemptedLabel: string
+    attemptedLabel: string,
   ): Promise<ResolveOutcome> => {
     const sr = await ytRequest<SearchListResponse>(key, "search", {
       part: "snippet",
@@ -324,7 +330,7 @@ async function resolveChannel(
 
 async function listUploadVideoIds(
   key: string,
-  uploadsPlaylistId: string
+  uploadsPlaylistId: string,
 ): Promise<{ ids: string[]; truncated: boolean }> {
   const ids: string[] = [];
   let pageToken: string | undefined;
@@ -368,7 +374,7 @@ async function listUploadVideoIds(
 
 async function fetchVideosBatched(
   key: string,
-  videoIds: string[]
+  videoIds: string[],
 ): Promise<VideoItem[]> {
   const out: VideoItem[] = [];
   for (let i = 0; i < videoIds.length; i += VIDEO_BATCH) {
@@ -428,7 +434,7 @@ async function fetchVideosBatched(
 
 export async function analyzeChannel(
   apiKey: string,
-  channelUrl: string
+  channelUrl: string,
 ): Promise<AnalyzeSuccessResponse | AnalyzeErrorResponse> {
   const ref = parseChannelInput(channelUrl);
   if (!ref) {
@@ -462,7 +468,8 @@ export async function analyzeChannel(
   if (!uploads) {
     return {
       ok: false,
-      error: "This channel has no uploads playlist (unusual). Try another channel.",
+      error:
+        "This channel has no uploads playlist (unusual). Try another channel.",
       code: "NO_UPLOADS",
     };
   }

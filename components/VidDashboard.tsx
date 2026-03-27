@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import type { AnalyzeSuccessResponse } from "@/lib/types";
 import {
   getAnalyzeCache,
@@ -13,7 +14,6 @@ import {
   parseInputDateUtc,
   startOfUtcMonth,
 } from "@/lib/dates";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   clearRecentChannels,
   getRecentChannels,
@@ -25,13 +25,16 @@ import {
   quartileThreshold,
   type VidSortKey,
 } from "@/lib/vidMetricsUtils";
-import { AnalyzeLoadingSkeleton } from "./vid/AnalyzeLoadingSkeleton";
-import { ChannelHeroCard } from "./vid/ChannelHeroCard";
-import { ChannelSearchPanel } from "./vid/ChannelSearchPanel";
-import { VidDashboardHeader } from "./vid/VidDashboardHeader";
-import { VidFilterBar } from "./vid/VidFilterBar";
-import { VidStatPills } from "./vid/VidStatPills";
-import { VidVideoResults } from "./vid/VidVideoResults";
+
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+
+import { AnalyzeLoadingSkeleton } from "@/components/vid/AnalyzeLoadingSkeleton";
+import { ChannelHeroCard } from "@/components/vid/ChannelHeroCard";
+import { ChannelSearchPanel } from "@/components/vid/ChannelSearchPanel";
+import { VidDashboardHeader } from "@/components/vid/VidDashboardHeader";
+import { VidFilterBar } from "@/components/vid/VidFilterBar";
+import { VidStatPills } from "@/components/vid/VidStatPills";
+import { VidVideoResults } from "@/components/vid/VidVideoResults";
 
 export function VidDashboard() {
   const [input, setInput] = useState("");
@@ -45,6 +48,7 @@ export function VidDashboard() {
 
   const [defaultStart, defaultEnd] = useMemo(() => {
     const now = new Date();
+
     return [
       formatInputDate(startOfUtcMonth(now)),
       formatInputDate(endOfUtcMonth(now)),
@@ -105,6 +109,7 @@ export function VidDashboard() {
 
       setData(null);
       setLoading(true);
+
       try {
         const res = await fetch("/api/analyze", {
           method: "POST",
@@ -112,18 +117,22 @@ export function VidDashboard() {
           body: JSON.stringify({ channelUrl }),
           signal: ac.signal,
         });
+
         const json = (await res.json()) as
           | AnalyzeSuccessResponse
           | { ok: false; error: string };
+
         if (!json.ok) {
           setError("error" in json ? json.error : "Request failed");
           return;
         }
+
         setData(json);
         setAnalyzeCache(channelUrl, json);
         setRecent(recordRecentFromAnalyze(channelUrl, json));
       } catch (e) {
         if (e instanceof DOMException && e.name === "AbortError") return;
+
         setError("Network error. Try again.");
       } finally {
         if (abortRef.current === ac) setLoading(false);
@@ -155,6 +164,7 @@ export function VidDashboard() {
 
   const filtered = useMemo(() => {
     if (!data?.videos.length) return [];
+
     const t0 = parseInputDateUtc(dateStart).getTime();
     const t1 = parseInputDateUtc(dateEnd).getTime() + 86400000 - 1;
     const q = debouncedTitleQ.trim().toLowerCase();
@@ -166,15 +176,20 @@ export function VidDashboard() {
     return data.videos.filter((v) => {
       const t = new Date(v.publishedAt).getTime();
       if (t < t0 || t > t1) return false;
+
       if (q && !v.title.toLowerCase().includes(q)) return false;
+
       if (v.viewCount < minOk) return false;
+
       return true;
     });
   }, [data, dateStart, dateEnd, debouncedTitleQ, debouncedMinViews]);
 
   const sorted = useMemo(() => {
     if (!sortState) return filtered;
+
     const dir = sortState.dir === "asc" ? 1 : -1;
+
     return [...filtered].sort((a, b) => {
       if (sortState.key === "publishedAt") {
         return (
@@ -183,6 +198,7 @@ export function VidDashboard() {
             new Date(b.publishedAt).getTime())
         );
       }
+
       return dir * (a[sortState.key] - b[sortState.key]);
     });
   }, [filtered, sortState]);
@@ -211,6 +227,7 @@ export function VidDashboard() {
       "comments",
       "viewsPerDay",
     ];
+
     const lines = [
       headers.join(","),
       ...sorted.map((v) =>
@@ -226,9 +243,11 @@ export function VidDashboard() {
         ].join(","),
       ),
     ];
+
     const blob = new Blob([lines.join("\n")], {
       type: "text/csv;charset=utf-8",
     });
+
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "vidmetrics-export.csv";
@@ -240,6 +259,7 @@ export function VidDashboard() {
     () => sorted.reduce((s, v) => s + v.viewCount, 0),
     [sorted],
   );
+
   const avgViewsPerDay = useMemo(
     () =>
       sorted.length

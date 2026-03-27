@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { useEffect, useRef, useState } from "react";
-import { useTheme } from "./ThemeProvider";
+import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
+import { useTheme } from "@/components/ThemeProvider";
 
 type Row = { id: string; title: string; viewCount: number };
 
@@ -68,14 +61,13 @@ export function ViewsBarChart({
         <h3 className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase dark:text-[#717171]">
           Top videos by views
         </h3>
+
         <p className="hidden text-[10px] font-medium text-zinc-400 sm:block dark:text-[#717171]">
           Hover for full title
         </p>
       </div>
-      <div
-        ref={containerRef}
-        className="h-60 w-full rounded-xl"
-      >
+
+      <div ref={containerRef} className="h-60 w-full rounded-xl">
         {chartSize.width > 0 && chartSize.height > 0 ? (
           <BarChart
             width={chartSize.width}
@@ -91,6 +83,7 @@ export function ViewsBarChart({
               horizontal
               vertical={false}
             />
+
             <XAxis
               type="number"
               tickFormatter={(v) =>
@@ -104,6 +97,7 @@ export function ViewsBarChart({
               axisLine={false}
               tickLine={false}
             />
+
             <YAxis
               type="category"
               dataKey="name"
@@ -112,6 +106,7 @@ export function ViewsBarChart({
               axisLine={false}
               tickLine={false}
             />
+
             <Tooltip
               cursor={{
                 fill: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
@@ -136,6 +131,7 @@ export function ViewsBarChart({
                   : [String(value ?? ""), "Views"]
               }
             />
+
             <Bar
               dataKey="views"
               fill="#FF0033"

@@ -7,7 +7,6 @@ body {
   font-family: var(--font-space-grotesk), system-ui, sans-serif;
 }
 
-/* ── YouTube-red glow (used via inline style / box-shadow utilities) ───────── */
 :root {
   --yt-glow: rgba(255, 0, 51, 0.28);
 }
@@ -25,7 +24,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-fade-slide-in {

@@ -1,14 +1,12 @@
-/** Start of calendar month in UTC (inclusive). */
 export function startOfUtcMonth(ref = new Date()): Date {
   return new Date(
-    Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), 1, 0, 0, 0, 0)
+    Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), 1, 0, 0, 0, 0),
   );
 }
 
-/** End of calendar month in UTC (inclusive). */
 export function endOfUtcMonth(ref = new Date()): Date {
   return new Date(
-    Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() + 1, 0, 23, 59, 59, 999)
+    Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() + 1, 0, 23, 59, 59, 999),
   );
 }
 

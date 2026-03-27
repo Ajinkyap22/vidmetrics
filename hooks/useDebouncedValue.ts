@@ -5,6 +5,7 @@ export function useDebouncedValue<T>(value: T, ms: number): T {
 
   useEffect(() => {
     const id = globalThis.setTimeout(() => setDebounced(value), ms);
+
     return () => globalThis.clearTimeout(id);
   }, [value, ms]);
 

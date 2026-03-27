@@ -51,7 +51,7 @@ export function ThemeToggle() {
       aria-label={
         theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
       }
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-300 bg-white text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 shadow-sm transition-all duration-200 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:bg-[#1a1a1a] dark:text-[#aaaaaa] dark:hover:bg-[#272727] dark:hover:text-[#f1f1f1]"
     >
       {theme === "dark" ? <SunIcon /> : <MoonIconSvg />}
     </button>

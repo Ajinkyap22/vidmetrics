@@ -164,15 +164,21 @@ function daysSince(isoDate: string): number {
 
 function thumbUrl(snippet: {
   thumbnails?: {
+    high?: { url?: string };
     medium?: { url?: string };
     default?: { url?: string };
   };
 }): string {
-  return (
+  const raw =
+    snippet.thumbnails?.high?.url ||
     snippet.thumbnails?.medium?.url ||
     snippet.thumbnails?.default?.url ||
-    ""
-  );
+    "";
+  if (!raw) return "";
+  // Some YouTube responses can be protocol-relative; normalize for browser safety.
+  if (raw.startsWith("//")) return `https:${raw}`;
+  if (raw.startsWith("http://")) return raw.replace(/^http:\/\//, "https://");
+  return raw;
 }
 
 type ResolvedChannel = {
@@ -180,7 +186,11 @@ type ResolvedChannel = {
   snippet: {
     title?: string;
     customUrl?: string;
-    thumbnails?: { medium?: { url?: string }; default?: { url?: string } };
+    thumbnails?: {
+      high?: { url?: string };
+      medium?: { url?: string };
+      default?: { url?: string };
+    };
   };
   contentDetails: {
     relatedPlaylists?: { uploads?: string };
@@ -368,6 +378,7 @@ async function fetchVideosBatched(
           title?: string;
           publishedAt?: string;
           thumbnails?: {
+            high?: { url?: string };
             medium?: { url?: string };
             default?: { url?: string };
           };
